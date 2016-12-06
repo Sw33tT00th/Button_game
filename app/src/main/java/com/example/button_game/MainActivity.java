@@ -1,5 +1,6 @@
 package com.example.button_game;
 
+import java.util.Date;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -10,12 +11,17 @@ import android.view.View;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-
+    private boolean firstButtonPressed = false;
+    private int lastRunTime = 0;
+    private int bestRunTime = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Chronometer timer = (Chronometer) findViewById(R.id.timer);
+        timer.setText("00");
 
         Button btn1 = (Button) findViewById(R.id.button1);
         btn1.setOnClickListener(this);
@@ -79,11 +85,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         // if timer isn't going start it
         Chronometer timer = (Chronometer) findViewById(R.id.timer);
-        timer.start();
+        if(!firstButtonPressed) {
+            timer.setBase(SystemClock.elapsedRealtime());
+            timer.setOnChronometerTickListener(new Chronometer.OnChronometerTickListener() {
+                @Override
+                public void onChronometerTick(Chronometer timer) {
+                    long time = SystemClock.elapsedRealtime() - timer.getBase();
+                    Date date = new Date(time);
+                    java.text.DateFormat formatter = new java.text.SimpleDateFormat("ss");
+                    String dateFormatted = formatter.format(date);
+                    timer.setText(dateFormatted);
+                }
+            });
+            timer.start();
+            firstButtonPressed = true;
+        }
         v.setVisibility(View.INVISIBLE);
         if(isComplete()) {
             // stop the timer and save the scores
             timer.stop();
+            lastRunTime = Integer.parseInt(timer.getText().toString());
+            TextView lastTime = (TextView) findViewById(R.id.textView2);
+            lastTime.setText("Last Time: " + lastRunTime + "s");
+            if(bestRunTime == 0 || bestRunTime > lastRunTime) {
+                bestRunTime = lastRunTime;
+                TextView bestTime = (TextView) findViewById(R.id.textView3);
+                bestTime.setText("Fastest Time: " + bestRunTime + "s");
+            }
         }
     }
 
@@ -243,8 +271,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             btn.setVisibility(View.VISIBLE);
 
             Chronometer timer = (Chronometer) findViewById(R.id.timer);
+            timer.stop();
             timer.setBase(SystemClock.elapsedRealtime());
-
+            timer.setText("00");
+            firstButtonPressed = false;
 
         }
     }
